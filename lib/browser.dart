@@ -4,7 +4,7 @@
 
 library github.browser;
 
-import 'package:http/browser_client.dart';
+import "package:w_transport/browser.dart" show browserTransportPlatform;
 
 import "src/common.dart";
 
@@ -15,5 +15,5 @@ export "src/common.dart";
 GitHub createGitHubClient(
     {Authentication auth, String endpoint: "https://api.github.com"}) {
   return new GitHub(
-      auth: auth, client: new BrowserClient(), endpoint: endpoint);
+      auth: auth, endpoint: endpoint, transportPlatform: browserTransportPlatform);
 }

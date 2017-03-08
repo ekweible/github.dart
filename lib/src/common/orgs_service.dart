@@ -27,8 +27,8 @@ class OrganizationsService extends Service {
   Future<Organization> get(String name) {
     return _github.getJSON("/orgs/${name}",
         convert: Organization.fromJSON,
-        statusCode: StatusCodes.OK, fail: (http.Response response) {
-      if (response.statusCode == 404) {
+        statusCode: StatusCodes.OK, fail: (transport.Response response) {
+      if (response.status == 404) {
         throw new OrganizationNotFound(_github, name);
       }
     }) as Future<Organization>;
@@ -134,7 +134,7 @@ class OrganizationsService extends Service {
   /// API docs: https://developer.github.com/v3/orgs/teams/#delete-team
   Future<bool> deleteTeam(int teamId) {
     return _github.request("DELETE", "/teams/${teamId}").then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -161,7 +161,7 @@ class OrganizationsService extends Service {
     return _github
         .request("PUT", "/teams/${teamId}/members/${user}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -173,7 +173,7 @@ class OrganizationsService extends Service {
     return _github
         .request("DELETE", "/teams/${teamId}/members/${user}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -184,8 +184,8 @@ class OrganizationsService extends Service {
     var completer = new Completer<TeamMembershipState>();
 
     _github.getJSON("/teams/${teamId}/memberships/${user}", statusCode: 200,
-        fail: (http.Response response) {
-      if (response.statusCode == 404) {
+        fail: (transport.Response response) {
+      if (response.status == 404) {
         completer.complete(new TeamMembershipState(null));
       } else {
         _github.handleStatusCode(response);
@@ -203,14 +203,14 @@ class OrganizationsService extends Service {
     var completer = new Completer<TeamMembershipState>();
 
     _github.request("POST", "/teams/${teamId}/memberships/${user}",
-        statusCode: 200, fail: (http.Response response) {
-      if (response.statusCode == 404) {
+        statusCode: 200, fail: (transport.Response response) {
+      if (response.status == 404) {
         completer.complete(new TeamMembershipState(null));
       } else {
         _github.handleStatusCode(response);
       }
     }).then((response) {
-      return new TeamMembershipState(JSON.decode(response.body)["state"]);
+      return new TeamMembershipState(response.body.asJson()["state"]);
       // TODO: Not sure what should go here.
     }).then(completer.complete);
 
@@ -241,7 +241,7 @@ class OrganizationsService extends Service {
     return _github
         .request("GET", "/teams/${teamId}/repos/${slug.fullName}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -252,7 +252,7 @@ class OrganizationsService extends Service {
     return _github
         .request("PUT", "/teams/${teamId}/repos/${slug.fullName}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -263,7 +263,7 @@ class OrganizationsService extends Service {
     return _github
         .request("DELETE", "/teams/${teamId}/repos/${slug.fullName}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -310,7 +310,7 @@ class OrganizationsService extends Service {
   Future<bool> pingHook(String org, int id) {
     return _github
         .request("POST", "/orgs/${org}/hooks/${id}/pings")
-        .then((response) => response.statusCode == 204);
+        .then((response) => response.status == 204);
   }
 
   /// Deletes the specified hook.
@@ -318,7 +318,7 @@ class OrganizationsService extends Service {
     return _github
         .request("DELETE", "/orgs/${org}/hooks/${id}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 }

@@ -21,7 +21,7 @@ class GitHub {
   final String endpoint;
 
   /// HTTP Client
-  final http.Client client;
+  final transport.HttpClient client;
 
   ActivityService _activity;
   AuthorizationsService _authorizations;
@@ -45,9 +45,22 @@ class GitHub {
   GitHub(
       {Authentication auth,
       this.endpoint: "https://api.github.com",
-      http.Client client})
+      @deprecated
+      http.Client client,
+      transport.TransportPlatform transportPlatform})
       : this.auth = auth == null ? new Authentication.anonymous() : auth,
-        this.client = client == null ? new http.Client() : client;
+        // TODO: throw if transport platform is missing?
+        this.client = _createClient(transportPlatform);
+
+  static _createClient(transport.TransportPlatform transportPlatform) {
+    final client = new transport.HttpClient(transportPlatform: transportPlatform);
+    client.autoRetry
+      ..enabled = true
+      ..test = ((request, response, willRetry) async => true)
+      ..maxRetries = 2
+      ..backOff = new transport.RetryBackOff.fixed(const Duration(milliseconds: 250));
+    return client;
+  }
 
   /// The maximum number of requests that the consumer is permitted to make per
   /// hour.
@@ -206,7 +219,7 @@ class GitHub {
   /// The default [convert] function returns the input object.
   Future<dynamic> getJSON(String path,
       {int statusCode,
-      void fail(http.Response response),
+      void fail(transport.Response response),
       Map<String, String> headers,
       Map<String, String> params,
       JSONConverter convert,
@@ -226,7 +239,7 @@ class GitHub {
     var response = await request("GET", path,
         headers: headers, params: params, statusCode: statusCode, fail: fail);
 
-    var json = JSON.decode(response.body);
+    var json = response.body.asJson();
 
     if (convert == null) {
       return json;
@@ -255,7 +268,7 @@ class GitHub {
   /// [body] is the data to send to the server.
   Future<dynamic> postJSON(String path,
       {int statusCode,
-      void fail(http.Response response),
+      void fail(transport.Response response),
       Map<String, String> headers,
       Map<String, String> params,
       JSONConverter convert,
@@ -279,21 +292,21 @@ class GitHub {
         body: body,
         statusCode: statusCode,
         fail: fail);
-    return convert(JSON.decode(response.body));
+    return convert(response.body.asJson());
   }
 
   ///
   /// Internal method to handle status codes
   ///
-  void handleStatusCode(http.Response response) {
+  void handleStatusCode(transport.Response response) {
     String message;
     List<Map<String, String>> errors;
     if (response.headers['content-type'].contains('application/json')) {
-      var json = JSON.decode(response.body);
+      var json = response.body.asJson();
       message = json['message'];
       errors = json['errors'] as List<Map<String, String>>;
     }
-    switch (response.statusCode) {
+    switch (response.status) {
       case 404:
         throw new NotFound(this, "Requested Resource was Not Found");
         break;
@@ -336,12 +349,12 @@ class GitHub {
   /// [params] are query string parameters.
   /// [body] is the body content of requests that take content.
   ///
-  Future<http.Response> request(String method, String path,
+  Future<transport.Response> request(String method, String path,
       {Map<String, String> headers,
       Map<String, dynamic> params,
       String body,
       int statusCode,
-      void fail(http.Response response),
+      void fail(transport.Response response),
       String preview}) async {
     if (headers == null) headers = {};
 
@@ -381,18 +394,24 @@ class GitHub {
       url.write(queryString);
     }
 
-    var request = new http.Request(method, Uri.parse(url.toString()));
-    request.headers.addAll(headers);
+    var request = client.newRequest()
+      ..uri = Uri.parse(url.toString())
+      ..headers.addAll(headers);
     if (body != null) {
       request.body = body;
     }
 
-    var streamedResponse = await client.send(request);
+    transport.Response response;
+    try {
+      response = await request.send(method);
+    } on transport.RequestException catch (e) {
+      print(e);
+      response = e.response;
+    }
 
-    var response = await http.Response.fromStream(streamedResponse);
-
-    _updateRateLimit(response.headers);
-    if (statusCode != null && statusCode != response.statusCode) {
+    _updateRateLimit(response?.headers ?? {});
+    if (response == null) return null;
+    if (statusCode != null && statusCode != response.status) {
       fail != null ? fail(response) : null;
       handleStatusCode(response);
       return null;

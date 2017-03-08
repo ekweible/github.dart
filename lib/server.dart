@@ -3,6 +3,8 @@ library github.server;
 
 import "dart:io";
 
+import "package:w_transport/vm.dart" show vmTransportPlatform;
+
 import "src/common.dart";
 
 export "src/common.dart";
@@ -17,7 +19,7 @@ GitHub createGitHubClient(
     auth = findAuthenticationFromEnvironment();
   }
 
-  return new GitHub(auth: auth, endpoint: endpoint);
+  return new GitHub(auth: auth, endpoint: endpoint, transportPlatform: vmTransportPlatform);
 }
 
 const List<String> COMMON_GITHUB_TOKEN_ENV_KEYS = const [

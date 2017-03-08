@@ -80,7 +80,7 @@ class GistsService extends Service {
   /// API docs: https://developer.github.com/v3/gists/#delete-a-gist
   Future<bool> deleteGist(String id) {
     return _github.request("DELETE", "/gists/${id}").then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -116,7 +116,7 @@ class GistsService extends Service {
   /// API docs: https://developer.github.com/v3/gists/#star-a-gist
   Future<bool> starGist(String id) {
     return _github.request("POST", "/gists/${id}/star").then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -125,7 +125,7 @@ class GistsService extends Service {
   /// API docs: https://developer.github.com/v3/gists/#star-a-gist
   Future<bool> unstarGist(String id) {
     return _github.request("DELETE", "/gists/${id}/star").then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -134,7 +134,7 @@ class GistsService extends Service {
   /// API docs: https://developer.github.com/v3/gists/#check-if-a-gist-is-starred
   Future<bool> isGistStarred(String id) {
     return _github.request("GET", "/gists/${id}/star").then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -145,7 +145,7 @@ class GistsService extends Service {
     return _github
         .request("POST", "/gists/${id}/forks", statusCode: 201)
         .then((response) {
-      return Gist.fromJSON(JSON.decode(response.body) as Map<String, dynamic>);
+      return Gist.fromJSON(response.body.asJson());
     });
   }
 

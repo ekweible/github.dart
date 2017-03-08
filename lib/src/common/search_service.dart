@@ -25,15 +25,15 @@ class SearchService extends Service {
         .fetchStreamed("GET", "/search/repositories",
             params: params, pages: pages)
         .listen((response) {
-      if (response.statusCode == 403 &&
-          response.body.contains("rate limit") &&
+      if (response.status == 403 &&
+          response.body.asString().contains("rate limit") &&
           isFirst) {
         throw new RateLimitHit(_github);
       }
 
       isFirst = false;
 
-      var input = JSON.decode(response.body);
+      var input = response.body.asJson();
 
       if (input['items'] == null) {
         return;
@@ -73,15 +73,15 @@ class SearchService extends Service {
     new PaginationHelper(_github)
         .fetchStreamed("GET", "/search/users", params: params, pages: pages)
         .listen((response) {
-      if (response.statusCode == 403 &&
-          response.body.contains("rate limit") &&
+      if (response.status == 403 &&
+          response.body.asString().contains("rate limit") &&
           isFirst) {
         throw new RateLimitHit(_github);
       }
 
       isFirst = false;
 
-      var input = JSON.decode(response.body);
+      var input = response.body.asJson();
 
       if (input['items'] == null) {
         return;

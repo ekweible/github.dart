@@ -70,8 +70,8 @@ class RepositoriesService extends Service {
 
     new PaginationHelper(_github)
         .fetchStreamed("GET", "/repositories", pages: pages, params: params)
-        .listen((http.Response response) {
-      var list = JSON.decode(response.body);
+        .listen((transport.Response response) {
+      var list = response.body.asJson();
       var repos = new List.from(
           list.map((Map<String, dynamic> it) => Repository.fromJSON(it)));
       for (var repo in repos) controller.add(repo);
@@ -104,8 +104,8 @@ class RepositoriesService extends Service {
   Future<Repository> getRepository(RepositorySlug slug) {
     return _github.getJSON("/repos/${slug.owner}/${slug.name}",
         convert: Repository.fromJSON,
-        statusCode: StatusCodes.OK, fail: (http.Response response) {
-      if (response.statusCode == 404) {
+        statusCode: StatusCodes.OK, fail: (transport.Response response) {
+      if (response.status == 404) {
         throw new RepositoryNotFound(_github, slug.fullName);
       }
     }) as Future<Repository>;
@@ -165,7 +165,7 @@ class RepositoriesService extends Service {
   Future<bool> deleteRepository(RepositorySlug slug) {
     return _github
         .request('DELETE', '/repos/${slug.fullName}')
-        .then((response) => response.statusCode == StatusCodes.NO_CONTENT);
+        .then((response) => response.status == StatusCodes.NO_CONTENT);
   }
 
   /// Lists the contributors of the specified repository.
@@ -232,7 +232,7 @@ class RepositoriesService extends Service {
     return _github
         .request("GET", "/repos/${slug.fullName}/collaborators/${user}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -240,7 +240,7 @@ class RepositoriesService extends Service {
     return _github
         .request("PUT", "/repos/${slug.fullName}/collaborators/${user}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -248,7 +248,7 @@ class RepositoriesService extends Service {
     return _github
         .request("DELETE", "/repos/${slug.fullName}/collaborators/${user}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -294,9 +294,9 @@ class RepositoriesService extends Service {
     }
 
     return _github.getJSON(url, headers: headers, statusCode: StatusCodes.OK,
-        fail: (http.Response response) {
-      if (response.statusCode == 404) {
-        throw new NotFound(_github, response.body);
+        fail: (transport.Response response) {
+      if (response.status == 404) {
+        throw new NotFound(_github, response.body.asString());
       }
     },
         convert: (Map<String, dynamic> input) =>
@@ -348,7 +348,7 @@ class RepositoriesService extends Service {
             body: file.toJSON())
         .then((response) {
       return ContentCreation
-          .fromJSON(JSON.decode(response.body) as Map<String, dynamic>);
+          .fromJSON(response.body.asJson());
     });
   }
 
@@ -381,7 +381,7 @@ class RepositoriesService extends Service {
             body: JSON.encode(map), statusCode: 200)
         .then((response) {
       return ContentCreation
-          .fromJSON(JSON.decode(response.body) as Map<String, dynamic>);
+          .fromJSON(response.body.asJson());
     });
   }
 
@@ -454,7 +454,7 @@ class RepositoriesService extends Service {
   Future<bool> testPushHook(RepositorySlug slug, int id) {
     return _github
         .request("POST", "/repos/${slug.fullName}/hooks/${id}/tests")
-        .then((response) => response.statusCode == 204);
+        .then((response) => response.status == 204);
   }
 
   /// Pings the hook.
@@ -463,14 +463,14 @@ class RepositoriesService extends Service {
   Future<bool> pingHook(RepositorySlug slug, int id) {
     return _github
         .request("POST", "/repos/${slug.fullName}/hooks/${id}/pings")
-        .then((response) => response.statusCode == 204);
+        .then((response) => response.status == 204);
   }
 
   Future<bool> deleteHook(RepositorySlug slug, int id) {
     return _github
         .request("DELETE", "/repos/${slug.fullName}/hooks/${id}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -540,9 +540,9 @@ class RepositoriesService extends Service {
   /// Creates a Release based on the specified [release].
   ///
   /// API docs: https://developer.github.com/v3/repos/releases/#create-a-release
-  Future<Hook> createRelease(RepositorySlug slug, CreateRelease release) {
+  Future<Release> createRelease(RepositorySlug slug, CreateRelease release) {
     return _github.postJSON("/repos/${slug.fullName}/releases",
-        convert: Release.fromJSON, body: release.toJSON()) as Future<Hook>;
+        convert: Release.fromJSON, body: release.toJSON()) as Future<Release>;
   }
 
   // TODO: Implement editRelease: https://developer.github.com/v3/repos/releases/#edit-a-release

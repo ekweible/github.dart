@@ -6,7 +6,7 @@ class PaginationHelper<T> {
 
   PaginationHelper(this.github);
 
-  Stream<http.Response> fetchStreamed(String method, String path,
+  Stream<transport.Response> fetchStreamed(String method, String path,
       {int pages,
       Map<String, String> headers,
       Map<String, dynamic> params,
@@ -76,7 +76,7 @@ class PaginationHelper<T> {
         params: params,
         body: body,
         statusCode: statusCode)) {
-      var json = JSON.decode(response.body) as List;
+      var json = response.body.asJson();
 
       for (var item in json) {
         yield item;

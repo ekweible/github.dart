@@ -67,8 +67,8 @@ class UsersService extends Service {
   /// API docs: https://developer.github.com/v3/users/#get-the-authenticated-user
   Future<CurrentUser> getCurrentUser() {
     return _github.getJSON("/user", statusCode: StatusCodes.OK,
-        fail: (http.Response response) {
-      if (response.statusCode == StatusCodes.FORBIDDEN) {
+        fail: (transport.Response response) {
+      if (response.status == StatusCodes.FORBIDDEN) {
         throw new AccessForbidden(_github);
       }
     }, convert: CurrentUser.fromJSON) as Future<CurrentUser>;
@@ -77,7 +77,7 @@ class UsersService extends Service {
   /// Checks if a user exists.
   Future<bool> isUser(String name) => _github
       .request("GET", "/users/${name}")
-      .then((resp) => resp.statusCode == StatusCodes.OK);
+      .then((resp) => resp.status == StatusCodes.OK);
 
   // TODO: Implement editUser: https://developer.github.com/v3/users/#update-the-authenticated-user
 
@@ -108,7 +108,7 @@ class UsersService extends Service {
   Future<bool> deleteEmails(List<String> emails) => _github
       .request("DELETE", "/user/emails",
           body: JSON.encode(emails), statusCode: 204)
-      .then((x) => x.statusCode == 204);
+      .then((x) => x.status == 204);
 
   /// List user followers.
   ///
@@ -120,13 +120,13 @@ class UsersService extends Service {
   /// Check if the current user is following the specified user.
   Future<bool> isFollowingUser(String user) =>
       _github.request("GET", "/user/following/${user}").then((response) {
-        return response.statusCode == 204;
+        return response.status == 204;
       });
 
   /// Check if the specified user is following target.
   Future<bool> isUserFollowing(String user, String target) =>
       _github.request("GET", "/users/${user}/following/${target}").then((x) {
-        return x.statusCode == 204;
+        return x.status == 204;
       });
 
   /// Follows a user.
@@ -134,7 +134,7 @@ class UsersService extends Service {
     return _github
         .request("POST", "/user/following/${user}", statusCode: 204)
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -143,7 +143,7 @@ class UsersService extends Service {
     return _github
         .request("DELETE", "/user/following/${user}", statusCode: 204)
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 

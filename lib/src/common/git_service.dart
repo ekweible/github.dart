@@ -102,7 +102,7 @@ class GitService extends Service {
             body: body, headers: headers)
         .then((response) {
       return GitReference
-          .fromJSON(JSON.decode(response.body) as Map<String, dynamic>);
+          .fromJSON(response.body.asJson());
     });
   }
 
@@ -112,7 +112,7 @@ class GitService extends Service {
   Future<bool> deleteReference(RepositorySlug slug, String ref) {
     return _github
         .request("DELETE", "/repos/${slug.fullName}/git/refs/${ref}")
-        .then((response) => response.statusCode == StatusCodes.NO_CONTENT);
+        .then((response) => response.status == StatusCodes.NO_CONTENT);
   }
 
   /// Fetches a tag from the repo given a SHA.

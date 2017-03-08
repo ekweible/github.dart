@@ -17,7 +17,7 @@ class ExploreService extends Service {
 
     var controller = new StreamController<TrendingRepository>();
 
-    _github.client.get(url).then((response) {
+    _github.client.newRequest().get(uri: Uri.parse(url)).then((response) {
       var doc = html_parser.parse(response.body);
       var items = doc.querySelectorAll(
           "li.repo-leaderboard-list-item.leaderboard-list-item");
@@ -47,7 +47,7 @@ class ExploreService extends Service {
   Future<Showcase> getShowcase(ShowcaseInfo info) {
     var completer = new Completer<Showcase>();
 
-    _github.client.get(info.url).then((response) {
+    _github.client.newRequest().get(uri: Uri.parse(info.url)).then((response) {
       var doc = html_parser.parse(response.body);
       var showcase = new Showcase();
 
@@ -94,8 +94,8 @@ class ExploreService extends Service {
 
     Function handleResponse;
 
-    handleResponse = (response) {
-      var doc = html_parser.parse(response.body);
+    handleResponse = (transport.Response response) {
+      var doc = html_parser.parse(response.body.asString());
 
       var cards = doc.querySelectorAll(".collection-card");
 
@@ -124,10 +124,7 @@ class ExploreService extends Service {
       for (var link in links) {
         if (link.text.contains("Next")) {
           didFetchMore = true;
-
-          var client = new http.Client();
-
-          client.get(link.attributes['href']).then(handleResponse);
+          _github.client.newRequest().get(uri: Uri.parse(link.attributes['href'])).then(handleResponse);
         }
       }
 
@@ -136,7 +133,7 @@ class ExploreService extends Service {
       }
     };
 
-    _github.client.get("https://github.com/showcases").then(handleResponse);
+    _github.client.newRequest().get(uri: Uri.parse("https://github.com/showcases")).then(handleResponse);
 
     return controller.stream;
   }

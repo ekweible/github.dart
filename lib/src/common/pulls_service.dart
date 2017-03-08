@@ -7,10 +7,16 @@ part of github.common;
 class PullRequestsService extends Service {
   PullRequestsService(GitHub github) : super(github);
 
-  Stream<PullRequest> list(RepositorySlug slug, {int pages}) {
+  Stream<PullRequest> list(RepositorySlug slug, {String base, String direction, int pages, String sort, String state}) {
+    final params = <String, dynamic>{};
+    if (base != null) params['base'] = base;
+    if (direction != null) params['direction'] = direction;
+    if (sort != null) params['sort'] = sort;
+    if (state != null) params['state'] = state;
+
     return new PaginationHelper(_github).objects(
         "GET", "/repos/${slug.fullName}/pulls", PullRequest.fromJSON,
-        pages: pages) as Stream<PullRequest>;
+        pages: pages, params: params) as Stream<PullRequest>;
   }
 
   /// Fetches a single pull request.
@@ -47,7 +53,7 @@ class PullRequestsService extends Service {
             body: JSON.encode(map))
         .then((response) {
       return PullRequest
-          .fromJSON(JSON.decode(response.body) as Map<String, dynamic>);
+          .fromJSON(response.body.asJson());
     });
   }
 
@@ -72,7 +78,7 @@ class PullRequestsService extends Service {
     return _github
         .request("GET", "/repos/${slug.fullName}/pulls/${number}/merge")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -92,7 +98,7 @@ class PullRequestsService extends Service {
             body: JSON.encode(json))
         .then((response) {
       return PullRequestMerge
-          .fromJSON(JSON.decode(response.body) as Map<String, dynamic>);
+          .fromJSON(response.body.asJson());
     });
   }
 

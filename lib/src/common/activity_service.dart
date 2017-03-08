@@ -155,7 +155,7 @@ class ActivityService extends Service {
     return _github
         .request("PUT", "/notifications", body: JSON.encode(data))
         .then((response) {
-      return response.statusCode == 205;
+      return response.status == 205;
     });
   }
 
@@ -173,7 +173,7 @@ class ActivityService extends Service {
         .request("PUT", "/repos/${slug.fullName}/notifications",
             body: JSON.encode(data))
         .then((response) {
-      return response.statusCode == 205;
+      return response.status == 205;
     });
   }
 
@@ -224,7 +224,7 @@ class ActivityService extends Service {
     return _github
         .request("GET", "/user/starred/${slug.fullName}")
         .then((response) {
-      return response.statusCode == 204;
+      return response.status == 204;
     });
   }
 
@@ -328,18 +328,18 @@ class EventPoller {
 
     _controller = new StreamController<Event>();
 
-    void handleEvent(http.Response response) {
+    void handleEvent(transport.Response response) {
       if (interval == null) {
         interval = int.parse(response.headers['x-poll-interval']);
       }
 
-      if (response.statusCode == 304) {
+      if (response.status == 304) {
         return;
       }
 
       _lastFetched = response.headers['ETag'];
 
-      var json = JSON.decode(response.body) as List<Map<String, dynamic>>;
+      var json = response.body.asJson();
 
       if (!(onlyNew && _timer == null)) {
         for (var item in json) {
